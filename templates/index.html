@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ChainIQ — Smart Supply Chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:       #0b0f1a;
+    --panel:    #111827;
+    --border:   #1e2d40;
+    --accent:   #00c4ff;
+    --accent2:  #7c3aed;
+    --warn:     #f59e0b;
+    --danger:   #ef4444;
+    --ok:       #10b981;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --font:     'Inter', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0;
+    width: 220px; height: 100vh;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 24px 16px;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .logo { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; margin-bottom: 4px; }
+  .logo span { color: var(--text); font-weight: 300; }
+  .logo-sub { font-size: 11px; color: var(--muted); margin-bottom: 32px; }
+  .nav-section-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 12px 0 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    color: var(--muted); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; margin-bottom: 2px;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover, .nav-item.active {
+    background: rgba(0,196,255,0.08);
+    color: var(--accent);
+  }
+  .nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+  .sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
+  .sidebar-footer .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .sidebar-footer .big { font-size: 22px; font-weight: 700; color: var(--ok); }
+  .sidebar-footer .tiny { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* ── DATA STATUS BAR ── */
+  .data-status {
+    margin: 8px 0;
+    background: rgba(0,196,255,0.06);
+    border: 1px solid rgba(0,196,255,0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+  .data-status .ds-title { color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+  .data-status .ds-row { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 2px; }
+  .data-status .ds-row span:last-child { color: var(--text); font-weight: 500; }
+
+  /* ── MAIN ── */
+  .main { margin-left: 220px; padding: 28px 32px; min-height: 100vh; }
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+  }
+  .page-title { font-size: 22px; font-weight: 700; }
+  .page-title span { color: var(--accent); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .status-pill {
+    background: rgba(16,185,129,0.12);
+    color: var(--ok);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .status-pill::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ok);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .data-badge {
+    background: rgba(245,158,11,0.12);
+    color: var(--warn);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  /* ── SECTIONS ── */
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
+  .section-title span { color: var(--accent); }
+
+  /* ── KPI GRID ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 16px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: default;
+  }
+  .kpi-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .kpi-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .kpi-card .value { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .kpi-card .sub { font-size: 11px; color: var(--muted); }
+  .kpi-card.accent .value { color: var(--accent); }
+  .kpi-card.ok     .value { color: var(--ok); }
+  .kpi-card.warn   .value { color: var(--warn); }
+  .kpi-card.danger .value { color: var(--danger); }
+  .kpi-card .stripe {
+    position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    border-radius: 12px 0 0 12px;
+  }
+  .kpi-card.accent .stripe { background: var(--accent); }
+  .kpi-card.ok     .stripe { background: var(--ok); }
+  .kpi-card.warn   .stripe { background: var(--warn); }
+  .kpi-card.danger .stripe { background: var(--danger); }
+  .kpi-card .trend {
+    position: absolute; top: 14px; right: 14px;
+    font-size: 18px; opacity: 0.3;
+  }
+
+  /* ── CHARTS GRID ── */
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .charts-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .charts-row-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .chart-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .chart-card .card-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text); margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .badge {
+    font-size: 10px; padding: 3px 8px; border-radius: 20px;
+    background: rgba(0,196,255,0.1); color: var(--accent);
+    border: 1px solid rgba(0,196,255,0.2);
+  }
+  .chart-box { position: relative; height: 220px; }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display: flex; gap: 12px; align-items: center;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px;
+    margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .filter-bar label { font-size: 12px; color: var(--muted); }
+  select, input[type=range] {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 10px; font-size: 12px; outline: none;
+    font-family: var(--font);
+  }
+  select:focus { border-color: var(--accent); }
+  input[type="text"] {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 10px; font-size: 12px; outline: none;
+    font-family: var(--font); width: 200px;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  /* ── TABLE ── */
+  .table-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; margin-bottom: 18px;
+  }
+  .table-header {
+    padding: 14px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-header .title { font-size: 13px; font-weight: 600; }
+  .table-scroll { overflow-x: auto; max-height: 380px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500; position: sticky; top: 0; background: var(--panel);
+    cursor: pointer; user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { color: var(--accent); }
+  td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid rgba(30,45,64,0.5); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+  .badge-medium { background: rgba(245,158,11,0.15); color: #fbbf24; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+  .badge-low    { background: rgba(100,116,139,0.2); color: #94a3b8; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+  .badge-ok     { background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+  .badge-yes    { background: rgba(239,68,68,0.15);  color: #f87171; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-no     { background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+  .badge-cat-furniture  { background: rgba(0,196,255,0.1); color: #00c4ff; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+  .badge-cat-clothing   { background: rgba(124,58,237,0.15); color: #a78bfa; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+  .badge-cat-electronics{ background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+
+  /* ── BTN ── */
+  .btn {
+    padding: 7px 16px; border-radius: 8px; font-size: 13px;
+    font-weight: 600; cursor: pointer; border: none;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-purple  { background: var(--accent2); color: #fff; }
+  .btn-ghost   { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--border); }
+
+  /* ── TWIN CONTROLS ── */
+  .twin-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .control-group { display: flex; flex-direction: column; gap: 8px; }
+  .control-group label { font-size: 12px; color: var(--muted); }
+  .range-row { display: flex; align-items: center; gap: 10px; }
+
+  /* ── ALERTS ── */
+  .alert-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 20px; border-bottom: 1px solid rgba(30,45,64,0.5);
+    transition: background 0.15s; cursor: default;
+  }
+  .alert-item:hover { background: rgba(255,255,255,0.02); }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-icon { font-size: 20px; margin-top: 2px; }
+  .alert-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .alert-msg { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* ── LOADING ── */
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    height: 80px; color: var(--muted); font-size: 13px; gap: 10px;
+  }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── PAGINATION ── */
+  .pagination { display: flex; align-items: center; gap: 8px; padding: 12px 16px; justify-content: flex-end; }
+  .page-btn { background: var(--bg); border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .page-btn:hover, .page-btn.active { border-color: var(--accent); color: var(--accent); }
+  .page-info { font-size: 12px; color: var(--muted); }
+
+  /* ── SALES VS TARGET ── */
+  .target-pill-green { color: var(--ok); font-weight: 600; font-size: 12px; }
+  .target-pill-red   { color: var(--danger); font-weight: 600; font-size: 12px; }
+
+  /* ── PROFIT BAR ── */
+  .profit-bar-wrap { width: 80px; height: 6px; background: var(--border); border-radius: 3px; display: inline-block; vertical-align: middle; margin-left: 6px; }
+  .profit-bar { height: 6px; border-radius: 3px; }
+
+  /* ── TOOLTIP ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── DATA QUALITY PANEL ── */
+  .dq-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .dq-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .dq-card .dq-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+  .dq-card .dq-val   { font-size: 20px; font-weight: 700; color: var(--accent); }
+  .dq-card .dq-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">Chain<span>IQ</span></div>
+  <div class="logo-sub">Retail Supply Intelligence</div>
+
+  <div class="nav-section-title">Analytics</div>
+  <button class="nav-item active" onclick="showSection('dashboard', this)">
+    <span class="icon">📊</span> Dashboard
+  </button>
+  <button class="nav-item" onclick="showSection('orders', this)">
+    <span class="icon">🛒</span> Order Analysis
+  </button>
+  <button class="nav-item" onclick="showSection('forecast', this)">
+    <span class="icon">📈</span> Demand Forecast
+  </button>
+
+  <div class="nav-section-title">Operations</div>
+  <button class="nav-item" onclick="showSection('inventory', this)">
+    <span class="icon">📦</span> Inventory
+  </button>
+  <button class="nav-item" onclick="showSection('alerts', this)">
+    <span class="icon">🔔</span> Alerts
+    <span id="alert-badge" style="margin-left:auto;background:var(--danger);color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;">–</span>
+  </button>
+  <button class="nav-item" onclick="showSection('twin', this)">
+    <span class="icon">🔮</span> Digital Twin
+  </button>
+  <button class="nav-item" onclick="showSection('data', this)">
+    <span class="icon">🗂️</span> Data Summary
+  </button>
+
+  <div class="sidebar-footer">
+    <div class="label">AI Model Accuracy</div>
+    <div class="big" id="sidebar-acc">–%</div>
+    <div class="tiny">XGBoost Forecast MAPE</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">Supply Chain <span>Control Tower</span></div>
+    <div class="topbar-right">
+      <span class="data-badge" id="data-badge">📁 Loading dataset…</span>
+      <div class="status-pill">All Systems Operational</div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div id="sec-dashboard" class="section active">
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="loading"><div class="spinner"></div> Loading KPIs…</div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="card-title">
+          Monthly Revenue Trend
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge" id="rev-year-badge">All</span>
+            <select id="year-filter" onchange="filterRevenue()" style="font-size:11px;padding:3px 8px;">
+              <option value="all">All Years</option>
+              <option value="2018">2018</option>
+              <option value="2019">2019</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="revenueChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Revenue by Category</div>
+        <div class="chart-box"><canvas id="categoryChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-row-3">
+      <div class="chart-card">
+        <div class="card-title">Top 5 States by Sales</div>
+        <div class="chart-box"><canvas id="stateChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Sales vs Target by Category</div>
+        <div class="chart-box"><canvas id="targetChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Profit by Sub-Category <span class="badge">Top 8</span></div>
+        <div class="chart-box"><canvas id="subCatChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ORDER ANALYSIS ══ -->
+  <div id="sec-orders" class="section">
+    <div class="section-title">🛒 Order <span>Analysis</span></div>
+
+    <div class="charts-row-equal" style="margin-bottom:18px;">
+      <div class="chart-card">
+        <div class="card-title">Category-wise Sales (Bar)</div>
+        <div class="chart-box"><canvas id="catBarChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Profit Margin by Category</div>
+        <div class="chart-box"><canvas id="marginChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <label>Search:</label>
+      <input type="text" id="order-search" placeholder="Order ID, City, State…" oninput="filterOrders()">
+      <label>Category:</label>
+      <select id="cat-filter" onchange="filterOrders()">
+        <option value="all">All</option>
+        <option value="Furniture">Furniture</option>
+        <option value="Clothing">Clothing</option>
+        <option value="Electronics">Electronics</option>
+      </select>
+      <label>State:</label>
+      <select id="state-filter" onchange="filterOrders()">
+        <option value="all">All States</option>
+      </select>
+      <button class="btn btn-ghost" onclick="resetOrderFilters()">Reset</button>
+      <span id="order-count" style="font-size:12px;color:var(--muted);margin-left:auto;"></span>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <span class="title">All Orders</span>
+        <button class="btn btn-ghost" onclick="exportCSV()" style="font-size:11px;padding:5px 12px;">⬇ Export CSV</button>
+      </div>
+      <div class="table-scroll" id="orders-wrap">
+        <div class="loading"><div class="spinner"></div> Loading orders…</div>
+      </div>
+      <div class="pagination" id="order-pagination"></div>
+    </div>
+  </div>
+
+  <!-- ══ FORECAST ══ -->
+  <div id="sec-forecast" class="section">
+    <div class="section-title">📈 Demand <span>Forecast</span></div>
+    <div class="table-card" style="margin-bottom:18px;">
+      <div class="table-header">
+        <span class="title">Demand Forecast — Next 3 Months</span>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <select id="sku-select" onchange="loadForecast()">
+            {% for sku in skus %}
+            <option value="{{ sku }}">{{ sku }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="padding:20px;">
+        <div class="chart-box" style="height:300px;"><canvas id="forecastChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ INVENTORY ══ -->
+  <div id="sec-inventory" class="section">
+    <div class="section-title">📦 <span>Inventory</span> Optimisation</div>
+    <div class="filter-bar">
+      <label>Filter:</label>
+      <select id="inv-reorder-filter" onchange="filterInventory()">
+        <option value="all">All Items</option>
+        <option value="yes">Needs Reorder Only</option>
+        <option value="no">OK Stock</option>
+      </select>
+      <label>Category:</label>
+      <select id="inv-cat-filter" onchange="filterInventory()">
+        <option value="all">All</option>
+      </select>
+      <input type="text" id="inv-search" placeholder="Search SKU…" oninput="filterInventory()" style="width:160px;">
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <span class="title">Inventory Optimisation — All SKUs</span>
+        <span class="badge" style="font-size:12px;padding:5px 12px;">EOQ + Safety Stock Model</span>
+      </div>
+      <div class="table-scroll" id="inv-table-wrap">
+        <div class="loading"><div class="spinner"></div> Calculating…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ALERTS ══ -->
+  <div id="sec-alerts" class="section">
+    <div class="section-title">🔔 Active <span>Alerts</span></div>
+    <div class="filter-bar">
+      <label>Severity:</label>
+      <select id="alert-severity" onchange="filterAlerts()">
+        <option value="all">All</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+      </select>
+      <label>Type:</label>
+      <select id="alert-type" onchange="filterAlerts()">
+        <option value="all">All Types</option>
+        <option value="Loss Alert">Loss Alert</option>
+        <option value="Low Stock">Low Stock</option>
+        <option value="Delivery Delay">Delivery Delay</option>
+      </select>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <span class="title">Active Alerts</span>
+        <span id="alert-count-label" style="font-size:12px;color:var(--muted);"></span>
+      </div>
+      <div id="alerts-wrap">
+        <div class="loading"><div class="spinner"></div> Fetching alerts…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DIGITAL TWIN ══ -->
+  <div id="sec-twin" class="section">
+    <div class="section-title">🔮 Digital <span>Twin</span> Simulator</div>
+    <div class="table-card" style="padding:20px;margin-bottom:18px;">
+      <div class="twin-controls">
+        <div class="control-group">
+          <label>Select SKU</label>
+          <select id="twin-sku">
+            {% for sku in skus %}
+            <option value="{{ sku }}">{{ sku }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Demand Shock: <span id="shock-label" style="color:var(--accent);font-weight:600;">0%</span></label>
+          <div class="range-row">
+            <span style="font-size:11px;color:var(--muted);">-50%</span>
+            <input type="range" id="demand-shock" min="-50" max="100" value="0" step="5"
+                   oninput="document.getElementById('shock-label').textContent=this.value+'%'" style="flex:1;">
+            <span style="font-size:11px;color:var(--muted);">+100%</span>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>Lead Time Delay: <span id="lt-label" style="color:var(--warn);font-weight:600;">0 days</span></label>
+          <div class="range-row">
+            <span style="font-size:11px;color:var(--muted);">0</span>
+            <input type="range" id="lt-delta" min="0" max="14" value="0" step="1"
+                   oninput="document.getElementById('lt-label').textContent=this.value+' days'" style="flex:1;">
+            <span style="font-size:11px;color:var(--muted);">14</span>
+          </div>
+        </div>
+        <div class="control-group" style="justify-content:flex-end;">
+          <button class="btn btn-purple" onclick="runTwin()" style="margin-top:auto;">▶ Run Simulation</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="card-title">Simulated Inventory Level — 30 Days <span class="badge">Digital Twin</span></div>
+      <div class="chart-box" style="height:280px;"><canvas id="twinChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ══ DATA SUMMARY ══ -->
+  <div id="sec-data" class="section">
+    <div class="section-title">🗂️ Dataset <span>Summary</span></div>
+    <div class="dq-grid" id="dq-grid">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+    <div class="charts-row-equal">
+      <div class="chart-card">
+        <div class="card-title">Orders Distribution by Category</div>
+        <div class="chart-box"><canvas id="dqCatChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Monthly Order Volume</div>
+        <div class="chart-box"><canvas id="dqMonthChart"></canvas></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><span class="title">Sample Raw Data (first 20 rows)</span></div>
+      <div class="table-scroll" id="dq-sample-wrap">
+        <div class="loading"><div class="spinner"></div> Loading…</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Chart defaults ─────────────────────────────────────────────────────────────
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = '#1e2d40';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+
+let revenueChart, categoryChart, forecastChart, twinChart, stateChart, targetChart, subCatChart;
+let catBarChart, marginChart, dqCatChart, dqMonthChart;
+
+let allRevData = [];
+let allOrdersData = [];
+let allAlertsData = [];
+let allInventoryData = [];
+
+let orderPage = 1;
+const PAGE_SIZE = 15;
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n >= 1e7) return (n/1e7).toFixed(1)+'Cr';
+  if (n >= 1e5) return (n/1e5).toFixed(1)+'L';
+  return n.toLocaleString('en-IN');
+}
+
+function catClass(cat) {
+  if (!cat) return 'badge-low';
+  const c = cat.toLowerCase();
+  if (c.includes('furniture'))   return 'badge-cat-furniture';
+  if (c.includes('clothing'))    return 'badge-cat-clothing';
+  if (c.includes('electronics')) return 'badge-cat-electronics';
+  return 'badge-low';
+}
+
+// ── Nav ────────────────────────────────────────────────────────────────────────
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+
+  if (name === 'forecast' && !forecastChart) loadForecast();
+  if (name === 'inventory') loadInventory();
+  if (name === 'alerts') loadAlerts();
+  if (name === 'orders') loadOrderAnalysis();
+  if (name === 'data') loadDataSummary();
+}
+
+// ── KPIs ───────────────────────────────────────────────────────────────────────
+async function loadKPIs() {
+  const r = await fetch('/api/kpis');
+  const d = await r.json();
+
+  document.getElementById('sidebar-acc').textContent = d.forecast_accuracy + '%';
+  document.getElementById('data-badge').textContent =
+    '📁 ' + d.total_orders.toLocaleString('en-IN') + ' Orders loaded';
+
+  const kpis = [
+    { label:'Total Sales',       value:'₹' + fmt(d.total_sales),    sub:'Gross revenue',    cls:'accent', icon:'💰' },
+    { label:'Total Profit',      value:'₹' + fmt(d.total_profit),   sub:'Net earnings',     cls:'ok',     icon:'📈' },
+    { label:'Total Orders',      value:d.total_orders.toLocaleString('en-IN'), sub:'Unique orders', cls:'warn', icon:'🛒' },
+    { label:'Units Sold',        value:d.total_qty.toLocaleString('en-IN'),    sub:'Total quantity', cls:'accent',icon:'📦' },
+    { label:'Profit Margin',     value:d.profit_margin + '%',        sub:'Overall margin',   cls:'ok',     icon:'📊' },
+    { label:'Low Stock Alerts',  value:d.low_stock_alerts,           sub:'Need reorder',     cls:'danger', icon:'⚠️' },
+    { label:'Delayed Deliveries',value:d.delayed_deliveries,         sub:'In transit issues',cls:'warn',   icon:'🚚' },
+    { label:'Forecast Accuracy', value:d.forecast_accuracy + '%',    sub:'AI model MAPE',    cls:'ok',     icon:'🤖' },
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.cls}">
+      <div class="stripe"></div>
+      <div class="trend">${k.icon}</div>
+      <div class="label">${k.label}</div>
+      <div class="value">${k.value}</div>
+      <div class="sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+// ── Revenue chart ──────────────────────────────────────────────────────────────
+async function loadRevenue() {
+  const r = await fetch('/api/revenue-trend');
+  allRevData = await r.json();
+  drawRevenue(allRevData);
+}
+
+function filterRevenue() {
+  const yr = document.getElementById('year-filter').value;
+  const filtered = yr === 'all' ? allRevData : allRevData.filter(x => x.month.startsWith(yr));
+  document.getElementById('rev-year-badge').textContent = yr === 'all' ? 'All' : yr;
+  drawRevenue(filtered);
+}
+
+function drawRevenue(data) {
+  const ctx = document.getElementById('revenueChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 220);
+  grad.addColorStop(0, 'rgba(0,196,255,0.25)');
+  grad.addColorStop(1, 'rgba(0,196,255,0)');
+  if (revenueChart) revenueChart.destroy();
+  revenueChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(x => x.month),
+      datasets: [
+        {
+          label: 'Revenue (₹)',
+          data: data.map(x => x.revenue),
+          borderColor: '#00c4ff', backgroundColor: grad,
+          borderWidth: 2, pointRadius: 3, fill: true, tension: 0.4,
+        },
+        {
+          label: 'Profit (₹)',
+          data: data.map(x => x.profit),
+          borderColor: '#10b981', backgroundColor: 'transparent',
+          borderWidth: 1.5, pointRadius: 2, tension: 0.4, borderDash:[4,3],
+        }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction: { mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:true, labels:{ boxWidth:10, font:{size:11} } },
+        tooltip:{ callbacks:{ label: ctx => ' ₹' + ctx.parsed.y.toLocaleString('en-IN') } }
+      },
+      scales:{
+        y:{ grid:{ color:'#1e2d40' }, ticks:{ callback: v => '₹'+fmt(v) } },
+        x:{ grid:{ display:false }, ticks:{ maxTicksLimit:10, maxRotation:0 } }
+      }
+    }
+  });
+}
+
+// ── Category doughnut ──────────────────────────────────────────────────────────
+async function loadCategory() {
+  const r = await fetch('/api/category-breakdown');
+  const d = await r.json();
+  const ctx = document.getElementById('categoryChart').getContext('2d');
+  categoryChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: d.map(x => x.Category),     // ← FIXED: capital C
+      datasets: [{
+        data: d.map(x => x.revenue),
+        backgroundColor: ['#00c4ff','#7c3aed','#10b981','#f59e0b','#ef4444'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{
+        legend:{ position:'right', labels:{ boxWidth:10, font:{size:11} } },
+        tooltip:{ callbacks:{ label: ctx => ' ₹' + ctx.parsed.toLocaleString('en-IN') } }
+      }
+    }
+  });
+}
+
+// ── State bar ──────────────────────────────────────────────────────────────────
+async function loadStateSales() {
+  const r = await fetch('/api/state-sales');
+  const d = await r.json();
+  const ctx = document.getElementById('stateChart').getContext('2d');
+  stateChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: d.map(x => x.State),
+      datasets: [{
+        label: 'Revenue (₹)',
+        data: d.map(x => x.revenue),
+        backgroundColor: '#00c4ff',
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label: ctx=>' ₹'+ctx.parsed.x.toLocaleString('en-IN')}} },
+      scales:{
+        x:{ grid:{color:'#1e2d40'}, ticks:{callback:v=>'₹'+fmt(v)} },
+        y:{ grid:{display:false} }
+      }
+    }
+  });
+}
+
+// ── Sales vs Target ────────────────────────────────────────────────────────────
+async function loadSalesTarget() {
+  const r = await fetch('/api/sales-vs-target');
+  const d = await r.json();
+  // Aggregate by category
+  const cats = [...new Set(d.map(x => x.Category))];
+  const actualByCat = {};
+  const targetByCat = {};
+  cats.forEach(c => { actualByCat[c]=0; targetByCat[c]=0; });
+  d.forEach(row => {
+    actualByCat[row.Category] = (actualByCat[row.Category]||0) + (row.actual||0);
+    targetByCat[row.Category] = (targetByCat[row.Category]||0) + (row.Target||0);
+  });
+
+  const ctx = document.getElementById('targetChart').getContext('2d');
+  targetChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: cats,
+      datasets: [
+        { label:'Actual Sales', data: cats.map(c=>actualByCat[c]), backgroundColor:'#00c4ff', borderRadius:4 },
+        { label:'Target',       data: cats.map(c=>targetByCat[c]), backgroundColor:'rgba(245,158,11,0.3)', borderRadius:4,
+          borderColor:'#f59e0b', borderWidth:1 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ labels:{boxWidth:10, font:{size:11}} },
+        tooltip:{callbacks:{label:ctx=>' ₹'+ctx.parsed.y.toLocaleString('en-IN')}}
+      },
+      scales:{
+        y:{grid:{color:'#1e2d40'}, ticks:{callback:v=>'₹'+fmt(v)}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ── SubCategory profit bar ─────────────────────────────────────────────────────
+async function loadSubCatProfit() {
+  const r = await fetch('/api/subcategory');
+  const d = await r.json();
+  const top8 = d.slice(0,8);
+  const ctx = document.getElementById('subCatChart').getContext('2d');
+  subCatChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top8.map(x => x['Sub-Category']),
+      datasets: [{
+        label:'Profit (₹)',
+        data: top8.map(x => x.profit),
+        backgroundColor: top8.map(x => x.profit >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' ₹'+ctx.parsed.y.toLocaleString('en-IN')}} },
+      scales:{
+        y:{grid:{color:'#1e2d40'}, ticks:{callback:v=>'₹'+fmt(v)}},
+        x:{grid:{display:false}, ticks:{maxRotation:30, font:{size:10}}}
+      }
+    }
+  });
+}
+
+// ── Order Analysis ─────────────────────────────────────────────────────────────
+async function loadOrderAnalysis() {
+  if (allOrdersData.length) { renderOrderTable(); return; }
+  const r = await fetch('/api/subcategory');
+  const subData = await r.json();
+
+  // Category bar
+  const catR = await fetch('/api/category-breakdown');
+  const catData = await catR.json();
+
+  if (catBarChart) catBarChart.destroy();
+  const ctx1 = document.getElementById('catBarChart').getContext('2d');
+  catBarChart = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: catData.map(x => x.Category),
+      datasets: [
+        { label:'Revenue', data:catData.map(x=>x.revenue), backgroundColor:'#00c4ff', borderRadius:4 },
+        { label:'Profit',  data:catData.map(x=>x.profit),  backgroundColor:'#10b981', borderRadius:4 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{boxWidth:10}}, tooltip:{callbacks:{label:ctx=>' ₹'+ctx.parsed.y.toLocaleString('en-IN')}}},
+      scales:{y:{grid:{color:'#1e2d40'},ticks:{callback:v=>'₹'+fmt(v)}},x:{grid:{display:false}}}
+    }
+  });
+
+  if (marginChart) marginChart.destroy();
+  const ctx2 = document.getElementById('marginChart').getContext('2d');
+  marginChart = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: catData.map(x => x.Category),
+      datasets: [{
+        data: catData.map(x => x.orders),
+        backgroundColor:['#00c4ff','#7c3aed','#10b981'],
+        borderWidth:0
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins:{legend:{position:'bottom', labels:{boxWidth:10,font:{size:11}}}}
+    }
+  });
+
+  // Load orders table data from subcategory
+  allOrdersData = subData;
+
+  // Populate state filter
+  const statesR = await fetch('/api/state-sales');
+  const statesD = await statesR.json();
+  const stateSelect = document.getElementById('state-filter');
+  statesD.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.State; o.textContent = s.State;
+    stateSelect.appendChild(o);
+  });
+
+  renderOrderTable();
+}
+
+function filterOrders() {
+  orderPage = 1;
+  renderOrderTable();
+}
+
+function resetOrderFilters() {
+  document.getElementById('order-search').value = '';
+  document.getElementById('cat-filter').value = 'all';
+  document.getElementById('state-filter').value = 'all';
+  orderPage = 1;
+  renderOrderTable();
+}
+
+function renderOrderTable() {
+  const search = document.getElementById('order-search')?.value.toLowerCase() || '';
+  const catF = document.getElementById('cat-filter')?.value || 'all';
+
+  let data = allOrdersData.filter(row => {
+    const matchCat  = catF === 'all' || row.Category === catF;
+    const matchSrch = !search || (row['Sub-Category']||'').toLowerCase().includes(search) || (row.Category||'').toLowerCase().includes(search);
+    return matchCat && matchSrch;
+  });
+
+  const total = data.length;
+  document.getElementById('order-count').textContent = total + ' items';
+
+  const start = (orderPage-1)*PAGE_SIZE;
+  const page = data.slice(start, start+PAGE_SIZE);
+  const totalPages = Math.ceil(total/PAGE_SIZE);
+
+  const wrap = document.getElementById('orders-wrap');
+  if (!page.length) { wrap.innerHTML = '<div class="loading">No results found</div>'; return; }
+
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>Sub-Category</th><th>Category</th>
+      <th>Revenue (₹)</th><th>Profit (₹)</th><th>Units Sold</th><th>Margin %</th>
+    </tr></thead>
+    <tbody>
+      ${page.map(row => {
+        const margin = row.revenue ? ((row.profit/row.revenue)*100).toFixed(1) : 0;
+        const barW = Math.min(Math.abs(margin), 100);
+        const barColor = margin >= 0 ? '#10b981' : '#ef4444';
+        return `<tr>
+          <td style="font-weight:600;color:var(--accent)">${row['Sub-Category']||'–'}</td>
+          <td><span class="${catClass(row.Category)}">${row.Category||'–'}</span></td>
+          <td>₹${(row.revenue||0).toLocaleString('en-IN')}</td>
+          <td style="color:${(row.profit||0)>=0?'#10b981':'#ef4444'}">₹${(row.profit||0).toLocaleString('en-IN')}</td>
+          <td>${(row.qty||0).toLocaleString('en-IN')}</td>
+          <td>
+            <span style="color:${barColor};font-weight:600">${margin}%</span>
+            <div class="profit-bar-wrap"><div class="profit-bar" style="width:${barW}%;background:${barColor}"></div></div>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+
+  // Pagination
+  const pg = document.getElementById('order-pagination');
+  pg.innerHTML = '';
+  if (totalPages > 1) {
+    pg.innerHTML = `<span class="page-info">Page ${orderPage} of ${totalPages}</span>`;
+    if (orderPage > 1) pg.innerHTML += `<button class="page-btn" onclick="goPage(${orderPage-1})">← Prev</button>`;
+    if (orderPage < totalPages) pg.innerHTML += `<button class="page-btn" onclick="goPage(${orderPage+1})">Next →</button>`;
+  }
+}
+
+function goPage(p) { orderPage = p; renderOrderTable(); window.scrollTo(0,0); }
+
+function exportCSV() {
+  const rows = [['Sub-Category','Category','Revenue','Profit','Qty']];
+  allOrdersData.forEach(r => rows.push([r['Sub-Category'],r.Category,r.revenue,r.profit,r.qty]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = 'supply_chain_data.csv';
+  a.click();
+}
+
+// ── Forecast ───────────────────────────────────────────────────────────────────
+async function loadForecast() {
+  const sku = document.getElementById('sku-select').value;
+  const r   = await fetch('/api/forecast/' + encodeURIComponent(sku));
+  const d   = await r.json();
+
+  const histDates = d.history.map(x => x.date);
+  const histVals  = d.history.map(x => x.sales_qty);
+  const fcDates   = d.forecast.map(x => x.date);
+  const fcVals    = d.forecast.map(x => x.forecast);
+
+  const ctx = document.getElementById('forecastChart').getContext('2d');
+  if (forecastChart) forecastChart.destroy();
+
+  forecastChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [...histDates, ...fcDates],
+      datasets: [
+        {
+          label: 'Actual Sales', data: [...histVals, ...Array(fcDates.length).fill(null)],
+          borderColor: '#00c4ff', backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 2, tension: 0.3,
+        },
+        {
+          label: 'AI Forecast', data: [...Array(histDates.length).fill(null), ...fcVals],
+          borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.1)',
+          borderWidth: 2, pointRadius: 4, fill: true, tension: 0.4,
+          borderDash: [5, 3],
+        }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{ legend:{ labels:{ boxWidth:12 } },
+        tooltip:{callbacks:{label:ctx=>' ₹'+ctx.parsed.y?.toLocaleString('en-IN')}} },
+      scales:{
+        y:{ grid:{color:'#1e2d40'}, title:{display:true, text:'Revenue (₹)', color:'#64748b'} },
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:12, maxRotation:0} }
+      }
+    }
+  });
+}
+
+// ── Inventory ──────────────────────────────────────────────────────────────────
+async function loadInventory() {
+  const r = await fetch('/api/inventory');
+  allInventoryData = await r.json();
+
+  // Populate category filter
+  const cats = [...new Set(allInventoryData.map(x => x.Category))];
+  const catSel = document.getElementById('inv-cat-filter');
+  catSel.innerHTML = '<option value="all">All</option>';
+  cats.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
+
+  filterInventory();
+}
+
+function filterInventory() {
+  const reorderF = document.getElementById('inv-reorder-filter')?.value || 'all';
+  const catF = document.getElementById('inv-cat-filter')?.value || 'all';
+  const search = document.getElementById('inv-search')?.value.toLowerCase() || '';
+
+  let data = allInventoryData.filter(row => {
+    const matchRO  = reorderF === 'all' || (reorderF==='yes' ? row.needs_reorder : !row.needs_reorder);
+    const matchCat = catF === 'all' || row.Category === catF;
+    const matchS   = !search || (row.sku||'').toLowerCase().includes(search);
+    return matchRO && matchCat && matchS;
+  });
+
+  const wrap = document.getElementById('inv-table-wrap');
+  if (!data.length) { wrap.innerHTML = '<div class="loading">No items found</div>'; return; }
+
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>SKU / Product</th><th>Category</th>
+      <th>Avg Demand/Day</th><th>Safety Stock</th>
+      <th>Reorder Point</th><th>EOQ</th>
+      <th>Current Stock</th><th>Days Left</th>
+      <th>Reorder?</th><th>Supplier</th>
+    </tr></thead>
+    <tbody>
+      ${data.map(row => `<tr>
+        <td style="font-family:monospace;color:var(--accent)">${row.sku}</td>
+        <td><span class="${catClass(row.Category)}">${row.Category}</span></td>
+        <td>${row.avg_daily_demand}</td>
+        <td>${row.safety_stock}</td>
+        <td>${row.reorder_point}</td>
+        <td style="color:var(--accent2);font-weight:600">${row.eoq}</td>
+        <td style="font-weight:600">${row.current_inventory}</td>
+        <td style="color:${row.stock_days_left<5?'#ef4444':row.stock_days_left<10?'#f59e0b':'#10b981'}">${row.stock_days_left}d</td>
+        <td><span class="${row.needs_reorder?'badge-yes':'badge-no'}">${row.needs_reorder?'YES':'No'}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${row.supplier}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ── Alerts ─────────────────────────────────────────────────────────────────────
+async function loadAlerts() {
+  const r = await fetch('/api/alerts');
+  allAlertsData = await r.json();
+  document.getElementById('alert-badge').textContent = allAlertsData.length;
+  filterAlerts();
+}
+
+function filterAlerts() {
+  const sev  = document.getElementById('alert-severity')?.value || 'all';
+  const type = document.getElementById('alert-type')?.value || 'all';
+
+  const data = allAlertsData.filter(a =>
+    (sev==='all'  || a.severity===sev) &&
+    (type==='all' || a.type===type)
+  );
+
+  document.getElementById('alert-count-label').textContent = data.length + ' alerts';
+  const icons = { 'Low Stock':'🔴', 'Delivery Delay':'🟡', 'Loss Alert':'🔵' };
+  const wrap = document.getElementById('alerts-wrap');
+  if (!data.length) {
+    wrap.innerHTML = '<div class="loading">✅ No alerts for selected filters</div>';
+    return;
+  }
+  wrap.innerHTML = data.map(a => `
+    <div class="alert-item">
+      <div class="alert-icon">${icons[a.type] || '⚪'}</div>
+      <div style="flex:1">
+        <div class="alert-title">
+          <span class="badge-${a.severity}" style="margin-right:8px">${a.type}</span>
+          ${a.product} (${a.sku})
+        </div>
+        <div class="alert-msg">${a.message}</div>
+      </div>
+      <span class="badge-${a.severity}" style="white-space:nowrap">${a.severity.toUpperCase()}</span>
+    </div>`).join('');
+}
+
+// ── Digital Twin ───────────────────────────────────────────────────────────────
+async function runTwin() {
+  const sku   = document.getElementById('twin-sku').value;
+  const shock = parseFloat(document.getElementById('demand-shock').value) / 100;
+  const lt    = parseInt(document.getElementById('lt-delta').value);
+
+  const r = await fetch('/api/digital-twin', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ sku, demand_shock: shock, lead_time_delta: lt })
+  });
+  const d = await r.json();
+
+  const ctx = document.getElementById('twinChart').getContext('2d');
+  if (twinChart) twinChart.destroy();
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 280);
+  grad.addColorStop(0, 'rgba(124,58,237,0.3)');
+  grad.addColorStop(1, 'rgba(124,58,237,0)');
+
+  twinChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: d.map(x => 'Day ' + x.day),
+      datasets: [{
+        label: 'Simulated Inventory',
+        data: d.map(x => x.inventory),
+        borderColor: '#7c3aed', backgroundColor: grad,
+        borderWidth: 2, fill: true, tension: 0.4, pointRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            afterLabel: (ctx) => {
+              const action = d[ctx.dataIndex].action;
+              return action !== 'OK' ? '⚡ ' + action : '';
+            }
+          }
+        }
+      },
+      scales:{
+        y:{ grid:{color:'#1e2d40'}, title:{display:true, text:'Units', color:'#64748b'} },
+        x:{ grid:{display:false} }
+      }
+    }
+  });
+}
+
+// ── Data Summary ───────────────────────────────────────────────────────────────
+async function loadDataSummary() {
+  const [kpisR, catR, revR, subR] = await Promise.all([
+    fetch('/api/kpis').then(r=>r.json()),
+    fetch('/api/category-breakdown').then(r=>r.json()),
+    fetch('/api/revenue-trend').then(r=>r.json()),
+    fetch('/api/subcategory').then(r=>r.json()),
+  ]);
+
+  const dqCards = [
+    { title:'Total Records',     val: kpisR.total_orders.toLocaleString('en-IN'), sub:'Unique orders in dataset' },
+    { title:'Total Units Sold',  val: kpisR.total_qty.toLocaleString('en-IN'),    sub:'Quantity across all orders' },
+    { title:'Categories',        val: catR.length,                                sub:'Furniture, Clothing, Electronics' },
+    { title:'Sub-Categories',    val: subR.length,                                sub:'Distinct product types' },
+    { title:'Months of Data',    val: revR.length,                                sub:'Monthly data points' },
+    { title:'Date Range',        val: revR.length ? revR[0].month + ' – ' + revR[revR.length-1].month : '–', sub:'Start to end' },
+  ];
+
+  document.getElementById('dq-grid').innerHTML = dqCards.map(c => `
+    <div class="dq-card">
+      <div class="dq-title">${c.title}</div>
+      <div class="dq-val">${c.val}</div>
+      <div class="dq-sub">${c.sub}</div>
+    </div>`).join('');
+
+  // Category chart
+  if (dqCatChart) dqCatChart.destroy();
+  const ctx1 = document.getElementById('dqCatChart').getContext('2d');
+  dqCatChart = new Chart(ctx1, {
+    type: 'pie',
+    data: {
+      labels: catR.map(x => x.Category + ' (' + x.orders + ' orders)'),
+      datasets: [{
+        data: catR.map(x => x.orders),
+        backgroundColor:['#00c4ff','#7c3aed','#10b981'],
+        borderWidth:0
+      }]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}}}}
+  });
+
+  // Monthly volume chart
+  if (dqMonthChart) dqMonthChart.destroy();
+  const ctx2 = document.getElementById('dqMonthChart').getContext('2d');
+  dqMonthChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: revR.map(x => x.month),
+      datasets: [{
+        label:'Orders',
+        data: revR.map(x => x.orders),
+        backgroundColor:'rgba(0,196,255,0.5)',
+        borderColor:'#00c4ff',
+        borderWidth:1,
+        borderRadius:3
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{grid:{color:'#1e2d40'}},x:{grid:{display:false},ticks:{maxTicksLimit:12,maxRotation:45,font:{size:10}}}}
+    }
+  });
+
+  // Sample rows
+  document.getElementById('dq-sample-wrap').innerHTML = `<table>
+    <thead><tr>
+      <th>Sub-Category</th><th>Category</th><th>Revenue (₹)</th><th>Profit (₹)</th><th>Units</th>
+    </tr></thead>
+    <tbody>
+      ${subR.slice(0,20).map(row => `<tr>
+        <td style="color:var(--accent);font-weight:500">${row['Sub-Category']}</td>
+        <td><span class="${catClass(row.Category)}">${row.Category}</span></td>
+        <td>₹${(row.revenue||0).toLocaleString('en-IN')}</td>
+        <td style="color:${(row.profit||0)>=0?'#10b981':'#ef4444'}">₹${(row.profit||0).toLocaleString('en-IN')}</td>
+        <td>${row.qty}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadKPIs();
+  loadRevenue();
+  loadCategory();
+  loadStateSales();
+  loadSalesTarget();
+  loadSubCatProfit();
+})();
+</script>
+</body>
+</html>
