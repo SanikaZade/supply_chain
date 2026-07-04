@@ -1,141 +1,193 @@
-# ChainIQ — Smart Supply Chain Management System
-### AI + Digital Twin | Retail / E-commerce | College Project
+#  AI-Powered Smart Supply Chain Management System
+
+> An intelligent Supply Chain Management System built with Python, Flask, and Machine Learning to help businesses forecast demand, optimize inventory, detect anomalies, and improve decision-making through data-driven insights.
 
 ---
 
-## 📁 Project Structure
+##  About the Project
+
+Managing a supply chain efficiently is challenging due to unpredictable customer demand, inventory fluctuations, and operational risks. Businesses often struggle with balancing stock levels while maintaining customer satisfaction and minimizing costs.
+
+This project was developed to address these challenges by combining **data analytics**, **machine learning**, and **interactive visualization** into a single web application. It analyzes historical sales data, provides inventory recommendations, identifies unusual business patterns, and presents meaningful insights through an easy-to-use dashboard.
+
+The goal of this project is to demonstrate how AI can support smarter supply chain decisions and improve operational efficiency.
+
+---
+
+##  What This Project Can Do
+
+-  Analyze historical sales data
+-  Forecast future product demand
+-  Optimize inventory levels
+-  Calculate reorder points
+-  Estimate safety stock
+-  Detect unusual sales or inventory behavior
+-  Simulate supply chain scenarios using a Digital Twin concept
+-  Display business insights through interactive dashboards
+
+---
+
+##  Machine Learning & Analytics
+
+This project combines traditional inventory management techniques with machine learning algorithms to improve business decisions.
+
+### Demand Forecasting
+Predicts future demand based on historical sales patterns, helping businesses prepare inventory more effectively.
+
+### Inventory Optimization
+Calculates optimal inventory values using:
+
+- Economic Order Quantity (EOQ)
+- Safety Stock
+- Reorder Point
+
+### Anomaly Detection
+Uses machine learning techniques to identify abnormal sales trends and unusual inventory behavior.
+
+### Digital Twin Simulation
+Simulates supply chain performance under different business conditions to support planning and decision-making.
+
+---
+
+
+# System Workflow
 
 ```
-supply_chain/
-├── app.py                  ← Flask backend (all API routes)
-├── requirements.txt        ← Python dependencies
-├── Dockerfile              ← Cloud-ready container
-├── docker-compose.yml      ← One-command deployment
+                CSV Dataset
+                     │
+                     ▼
+           Data Preprocessing
+              (Pandas / NumPy)
+                     │
+                     ▼
+         Machine Learning Engine
+       ┌──────────┬──────────────┐
+       │          │              │
+       ▼          ▼              ▼
+ Demand     Inventory      Anomaly
+Forecast   Optimization   Detection
+       │          │              │
+       └──────────┴──────────────┘
+                     │
+                     ▼
+          Digital Twin Simulation
+                     │
+                     ▼
+             Flask Web Application
+                     │
+                     ▼
+         Interactive Dashboard
+```
+
+---
+
+##  Technology Stack
+
+| Category | Technologies |
+|----------|--------------|
+| Programming Language | Python |
+| Backend | Flask |
+| Frontend | HTML, CSS, JavaScript |
+| Data Processing | Pandas, NumPy |
+| Machine Learning | Scikit-learn, XGBoost |
+| Data Visualization | Chart.js |
+| Deployment | Docker, Docker Compose, Gunicorn |
+
+---
+
+##  Project Structure
+
+```text
+Supply_Chain_Project/
+
+├── app.py
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+│
 ├── data/
-│   ├── generate_data.py    ← Synthetic dataset generator
-│   └── supply_chain_data.csv  ← Generated automatically
+│   ├── List of Orders.csv
+│   ├── Order Details.csv
+│   └── Sales target.csv
+│
 ├── models/
-│   └── ai_engine.py        ← XGBoost forecasting + optimization + anomaly detection
-└── templates/
-    └── index.html          ← Full dashboard UI
+│   └── ai_engine.py
+│
+├── templates/
+│   └── index.html
+│
+├── static/
+│   ├── css/
+│   ├── js/
+│   └── images/
+│
+└── README.md
 ```
 
 ---
 
-## 🚀 Quick Start (Local)
+##  Dashboard Highlights
 
-### 1. Install dependencies
-```bash
-pip install -r requirements.txt
-```
+The dashboard provides a simple and interactive view of business performance, including:
 
-### 2. Generate dataset
-```bash
-python data/generate_data.py
-```
-
-### 3. Run the app
-```bash
-python app.py
-```
-
-### 4. Open browser
-```
-http://localhost:5000
-```
+- Sales Overview
+- Revenue Analysis
+- Product Demand Trends
+- Inventory Status
+- Forecast Results
+- Inventory Optimization Metrics
+- Supply Chain Alerts
+- Digital Twin Simulation
 
 ---
 
-## 🐳 Cloud Deployment (Docker)
+##  Dataset
 
-```bash
-# Build and run
-docker-compose up --build
+The project uses an Indian E-Commerce dataset containing information such as:
 
-# Access at
-http://localhost:5000
-```
+- Customer Orders
+- Product Details
+- Sales Records
+- Order Information
+- Regional Sales
+- Sales Targets
 
-To deploy on a cloud VM (AWS EC2 / GCP / Azure):
-```bash
-# On the server
-git clone <your-repo>
-cd supply_chain
-docker-compose up -d --build
-```
+Dataset Files:
 
----
-
-## 🧠 AI Modules
-
-| Module | Algorithm | Purpose |
-|---|---|---|
-| Demand Forecasting | XGBoost | Predict next 30 days of sales per SKU |
-| Inventory Optimization | EOQ + Safety Stock | Calculate optimal reorder quantity |
-| Anomaly Detection | Isolation Forest | Flag unusual demand/delivery events |
-| Digital Twin | Monte Carlo Simulation | What-if scenario planning |
+- `List of Orders.csv`
+- `Order Details.csv`
+- `Sales target.csv`
 
 ---
 
-## 📊 Dashboard Sections
+##  Project Highlights
 
-1. **Dashboard** — KPI cards + revenue trend + category breakdown
-2. **Demand Forecast** — Per-SKU 30-day AI forecast vs historical
-3. **Inventory** — Safety stock, EOQ, reorder decisions for all SKUs
-4. **Alerts** — Low stock, delayed delivery, anomaly alerts
-5. **Digital Twin** — Simulate demand shocks and lead time delays
+✔ AI-powered demand forecasting
 
----
+✔ Inventory optimization using EOQ and Safety Stock
 
-## 📈 Key Formulas Used
+✔ Interactive business dashboard
 
-```
-Safety Stock  = Z × σ_demand × √(lead_time)     [Z = 1.65 → 95% service level]
-Reorder Point = avg_demand × lead_time + safety_stock
-EOQ           = √(2 × D × S / H)
-```
+✔ Machine learning-based anomaly detection
+
+✔ Digital Twin concept for supply chain simulation
+
+✔ Docker-ready application
 
 ---
 
-## 🛠 Tech Stack
+##  Future Improvements
 
-- **Backend**: Python Flask
-- **AI/ML**: XGBoost, Isolation Forest (scikit-learn)
-- **Frontend**: Vanilla JS + Chart.js
-- **Data**: Pandas, NumPy
-- **Deployment**: Docker + Docker Compose (cloud-ready)
+Some planned enhancements include:
 
----
+- Real-time data integration
+- Multi-warehouse inventory management
+- Supplier performance analytics
+- Live shipment tracking
+- REST API support
+- User authentication
+- Cloud deployment (AWS/Azure)
+- Advanced forecasting models
+- Power BI integration
 
-## 🔮 Digital Twin — What-If Scenarios
 
-The Digital Twin simulator lets you:
-- Simulate +/- demand shocks (e.g. festival spike, recession dip)
-- Add supplier lead time delays
-- See live 30-day inventory projection with automatic reorder triggers
-
----
-
-## 📋 Dataset Fields
-
-| Field | Description |
-|---|---|
-| sku | Product identifier |
-| date | Daily date |
-| sales_qty | Units sold |
-| inventory_level | Units in stock |
-| reorder_point | Trigger threshold |
-| safety_stock | Buffer stock |
-| lead_time_days | Supplier delivery time |
-| supplier_id / name | Supplier details |
-| delivery_status | Delivered / Delayed / None |
-| is_festival | Festival day flag |
-| is_promotion | Promotion day flag |
-| is_anomaly | Injected anomaly flag |
-| revenue | Daily revenue (₹) |
-
----
-
-## 👨‍💻 Developed For
-**Final Year Engineering Project** — AI and Allied Systems
-Domain: Retail / E-commerce Supply Chain
