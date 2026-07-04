@@ -182,18 +182,5 @@ Dataset Files:
 
 ---
 
-##  Future Improvements
-
-Some planned enhancements include:
-
-- Real-time data integration
-- Multi-warehouse inventory management
-- Supplier performance analytics
-- Live shipment tracking
-- REST API support
-- User authentication
-- Cloud deployment (AWS/Azure)
-- Advanced forecasting models
-- Power BI integration
 
 
