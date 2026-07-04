@@ -94,6 +94,12 @@ Forecast   Optimization   Detection
 | Deployment | Docker, Docker Compose, Gunicorn |
 
 ---
+## 📸 Application Preview
+
+<img width="1665" height="840" alt="Screenshot 2026-07-02 112549" src="https://github.com/user-attachments/assets/5ba20c54-409e-4a4f-b8d4-cbabc118bf4b" />
+
+<img width="1627" height="402" alt="Screenshot 2026-07-02 123618" src="https://github.com/user-attachments/assets/052bae70-c6f0-4869-ae0c-0024a3e45dc2" />
+
 
 ##  Project Structure
 
