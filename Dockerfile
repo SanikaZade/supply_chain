@@ -7,9 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Generate dataset on first run
-RUN python data/generate_data.py
-
 EXPOSE 5000
 
 ENV FLASK_ENV=production
