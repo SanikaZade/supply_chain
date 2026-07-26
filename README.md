@@ -3,7 +3,6 @@
 > An intelligent Supply Chain Management System built with Python, Flask, and Machine Learning to help businesses forecast demand, optimize inventory, detect anomalies, and improve decision-making through data-driven insights.
 
 ---
-
 ##  About the Project
 
 Managing a supply chain efficiently is challenging due to unpredictable customer demand, inventory fluctuations, and operational risks. Businesses often struggle with balancing stock levels while maintaining customer satisfaction and minimizing costs.
